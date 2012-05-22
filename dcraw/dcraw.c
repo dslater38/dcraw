@@ -75,10 +75,13 @@
 #ifdef WIN32
 #include <sys/utime.h>
 #include <winsock2.h>
+#include <direct.h>	// for getcwd
 #pragma comment(lib, "ws2_32.lib")
 #define snprintf _snprintf
 #define strcasecmp stricmp
 #define strncasecmp strnicmp
+#define swab(a,b,c) _swab((char *)(a), (char *)(b), c)	// stupid MS declares swab(char *,char *,int) instead of swab(void *,void *,int)
+#pragma warning(disable: 4305)	// warning C4305: 'initializing' : truncation from 'double' to 'const float' - comes from float table initializers
 typedef __int64 INT64;
 typedef unsigned __int64 UINT64;
 #else
@@ -1261,7 +1264,7 @@ int CLASS minolta_z2()
   int i, nz;
   char tail[424];
 
-  fseek (ifp, -sizeof tail, SEEK_END);
+  fseek (ifp, -((long)sizeof tail), SEEK_END);
   fread (tail, 1, sizeof tail, ifp);
   for (nz=i=0; i < sizeof tail; i++)
     if (tail[i]) nz++;
@@ -8710,7 +8713,7 @@ void CLASS tiff_set (ushort *ntag,
   else tt->val.i = val;
 }
 
-#define TOFF(ptr) ((char *)(&(ptr)) - (char *)th)
+#define TOFF(ptr) ((int)((char *)(&(ptr)) - (char *)th))
 
 void CLASS tiff_head (struct tiff_hdr *th, int full)
 {
