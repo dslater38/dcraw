@@ -4114,17 +4114,44 @@ void CLASS ahd_interpolate()
   ushort (*pix)[4], (*rix)[3];
   static const int dir[4] = { -1, 1, -TS, TS };
   unsigned ldiff[2][4], abdiff[2][4], leps, abeps;
-  float r, cbrt[0x10000], xyz[3], xyz_cam[3][4];
+  float /*r,*/ xyz[3], xyz_cam[3][4];
+  // since this array is initialized and then never written to again, there is no real need to put it on the stack
+  static float cbrt[0x10000];
   ushort (*rgb)[TS][TS][3];
    short (*lab)[TS][TS][3], (*lix)[3];
    char (*homo)[TS][TS], *buffer;
 
   if (verbose) fprintf (stderr,_("AHD interpolation...\n"));
 
-  for (i=0; i < 0x10000; i++) {
-    r = i / 65535.0;
-    cbrt[i] = r > 0.008856 ? pow(r,1/3.0) : 7.787*r + 16/116.0;
+
+  //for (i=0; i < 0x10000; i++) {
+  //  r = i / 65535.0;
+  //  cbrt[i] = r > 0.008856 ? pow(r,1/3.0) : 7.787*r + 16/116.0;
+  //}
+
+  // eliminate the above ? : test by splitting the loop into 2 loops
+  // 580.0/65535.0 < 0.008856 while 581.0/65535.0 > 0.008856
+
+  // Note: spliting the loops and performing the transforms below 
+  // seem to both improve performance and precision.
+  // I wrote a test app that created 2 cbrt arrays using the original 
+  // loop and using the changed loops below. Initially, there were 
+  // differences in the resulting arrays in the 7-8'th decimal place
+  // However, If I changed r in the original loop from a float to a double
+  // then I get identical arrays.
+
+  // eliminate r = i/65535.0 by folding the division into the coefficient
+  // 7.787*r == 7.787*(i/65535) == i*(7.787/65535) == i*1.188220035095750362e-4
+  for( i=0; i<581; ++i ) {
+    cbrt[i] = (float)((double)i*1.188220035095750362e-4 + 16/116.0);
   }
+
+  // eliminate the r/65535.0 computation using the following identity
+  // pow(r,1/3) == pow(i/65535,1/3) == pow(i,1/3)/pow(65535,1/3) == pow(i,1/3)/40.31726853031786851
+  for( i=581; i<0x10000; ++i ) {
+	cbrt[i] = pow((double)i,1.0/3.0) / 40.31726853031786851;
+  }
+
   for (i=0; i < 3; i++)
     for (j=0; j < colors; j++)
       for (xyz_cam[i][j] = k=0; k < 3; k++)
