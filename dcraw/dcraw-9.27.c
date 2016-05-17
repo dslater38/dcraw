@@ -42,7 +42,7 @@
 #include <time.h>
 #include <sys/types.h>
 
-#if defined(DJGPP) || defined(__MINGW32__) || defined(_MSC_VER)
+#if defined(DJGPP) || defined(__MINGW32__)
 #define fseeko fseek
 #define ftello ftell
 #else
@@ -54,13 +54,10 @@
 #ifdef WIN32
 #include <sys/utime.h>
 #include <winsock2.h>
-#include <direct.h>	// for getcwd
 #pragma comment(lib, "ws2_32.lib")
 #define snprintf _snprintf
 #define strcasecmp stricmp
 #define strncasecmp strnicmp
-#define swab(a,b,c) _swab((char *)(a), (char *)(b), c)	// stupid MS declares swab(char *,char *,int) instead of swab(void *,void *,int)
-#pragma warning(disable: 4305)	// warning C4305: 'initializing' : truncation from 'double' to 'const float' - comes from float table initializers
 typedef __int64 INT64;
 typedef unsigned __int64 UINT64;
 #else
