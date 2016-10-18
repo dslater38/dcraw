@@ -3,3 +3,4 @@ build/*
 *.sdf
 *.suo
 *.vcxproj.user
+dcraw.VC.db
